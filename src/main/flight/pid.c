@@ -272,7 +272,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     }
 }
 
-static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
+/*static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
             rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
     UNUSED(rxConfig);
@@ -346,7 +346,7 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
         if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
             delta = error - lastErrorForDelta[axis];
             lastErrorForDelta[axis] = error;
-        } else {                                       /* Delta from measurement */
+        } else {                                       
             delta = -(gyroError - lastErrorForDelta[axis]);
             lastErrorForDelta[axis] = gyroError;
         }
@@ -412,10 +412,10 @@ static void pidMultiWii23(pidProfile_t *pidProfile, controlRateConfig_t *control
     axisPID_I[FD_YAW] = ITerm;
     axisPID_D[FD_YAW] = 0;
 #endif
-}
+}*/
 
 
-static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
+/*static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig, uint16_t max_angle_inclination,
         rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig)
 {
     UNUSED(rxConfig);
@@ -561,7 +561,7 @@ static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *co
 #endif
     GET_PID_MULTI_WII_REWRITE_LOCALS(axis);
     }
-}
+}*/
 
 
 void pidSetController(pidControllerType_e type)
