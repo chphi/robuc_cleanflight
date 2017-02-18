@@ -68,13 +68,16 @@ static float errorGyroIf[3], errorGyroIfLimit[3];
 static int32_t errorAngleI[2];
 static float errorAngleIf[2];
 
-static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
+// static void pidMultiWiiRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
+//         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);
+
+static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);
 
 typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
 
-pidControllerFuncPtr pid_controller = pidMultiWiiRewrite; // which pid controller are we using
+pidControllerFuncPtr pid_controller = pidLuxFloat; // which pid controller are we using
 
 void pidResetErrorAngle(void)
 {
@@ -568,13 +571,13 @@ void pidSetController(pidControllerType_e type)
 {
     switch (type) {
         default:
-        case PID_CONTROLLER_MWREWRITE:
-            pid_controller = pidMultiWiiRewrite;
-            break;
+        // case PID_CONTROLLER_MWREWRITE:
+        //     pid_controller = pidMultiWiiRewrite;
+        //     break;
         case PID_CONTROLLER_LUX_FLOAT:
             pid_controller = pidLuxFloat;
             break;
-        case PID_CONTROLLER_MW23:
-            pid_controller = pidMultiWii23;
+        // case PID_CONTROLLER_MW23:
+        //     pid_controller = pidMultiWii23;
     }
 }
