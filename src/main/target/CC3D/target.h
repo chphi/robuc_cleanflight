@@ -49,6 +49,8 @@
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
+#define DEFAULT_GYRO_SAMPLE_HZ      2000
+#define DEFAULT_PID_PROCESS_DENOM   1
 
 #define GYRO_MPU6000_ALIGN CW270_DEG
 
@@ -61,6 +63,7 @@
 #define BARO
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
+#define USE_BARO_BMP280
 
 // External I2C MAG
 #define MAG
@@ -75,8 +78,10 @@
 #define USE_VCP
 #define USE_UART1
 #define USE_UART3
-#define USE_SOFTSERIAL1
+//#define USE_SOFTSERIAL1
 #define SERIAL_PORT_COUNT 4
+
+#define USE_UART1_TX_DMA
 
 #define SOFTSERIAL_1_TIMER TIM3
 #define SOFTSERIAL_1_TIMER_TX_HARDWARE 1 // PWM 2
@@ -91,45 +96,63 @@
 
 #define USE_ADC
 
-#define CURRENT_METER_ADC_GPIO      GPIOB
-#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_1
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_9
+#define ADC_INSTANCE                ADC1
+#define ADC_ABP2_PERIPHERAL         RCC_APB2Periph_ADC1
+#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
+#define ADC_DMA_CHANNEL             DMA1_Channel1
 
-#define VBAT_ADC_GPIO               GPIOA
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
-#define VBAT_ADC_CHANNEL            ADC_Channel_0
+#define ADC0_GPIO                   GPIOB
+#define ADC0_GPIO_PIN               GPIO_Pin_1
+#define ADC0_CHANNEL                ADC_Channel_9
 
-#define RSSI_ADC_GPIO               GPIOA
-#define RSSI_ADC_GPIO_PIN           GPIO_Pin_1
-#define RSSI_ADC_CHANNEL            ADC_Channel_1
+#define ADC1_GPIO                   GPIOA
+#define ADC1_GPIO_PIN               GPIO_Pin_0
+#define ADC1_CHANNEL                ADC_Channel_0
+
+#define ADC2_GPIO                   GPIOB
+#define ADC2_GPIO_PIN               GPIO_Pin_0
+#define ADC2_CHANNEL                ADC_Channel_8
+
+#define ADC_CHANNEL_COUNT 3
+
+#define ADC_AMPERAGE     ADC_CHANNEL0
+#define ADC_BATTERY     ADC_CHANNEL1
+#define ADC_RSSI        ADC_CHANNEL2
 
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM3
 #define WS2811_DMA_TC_FLAG           DMA1_FLAG_TC6
-#define WS2811_DMA_HANDLER_IDENTIFER DMA1_CH6_HANDLER
-
-#define GPS
-#define BLACKBOX
-#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
-
-#define TELEMETRY
-#define SERIAL_RX
-//#define SONAR
-#define USE_SERVOS
-#define USE_CLI
-
-#define USE_SERIAL_1WIRE
-
-// FlexPort (pin 21/22, TX/RX respectively):
-// Note, FlexPort has 10k pullups on both TX and RX
-// JST Pin3 TX - connect to external UART/USB RX
-#define S1W_TX_GPIO         GPIOB
-#define S1W_TX_PIN          GPIO_Pin_10
-// JST Pin4 RX - connect to external UART/USB TX
-#define S1W_RX_GPIO         GPIOB
-#define S1W_RX_PIN          GPIO_Pin_11
+#define WS2811_DMA_HANDLER_IDENTIFER DMA1Channel6Descriptor
 
 #define SPEKTRUM_BIND
 // UART3, PB11 (Flexport)
 #define BIND_PORT  GPIOB
 #define BIND_PIN   Pin_11
+
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+#define SONAR
+#define SONAR_TRIGGER_PIN           Pin_5   // (PB5)
+#define SONAR_TRIGGER_GPIO          GPIOB
+#define SONAR_ECHO_PIN              Pin_0   // (PB0) - only 3.3v ( add a 1K Ohms resistor )
+#define SONAR_ECHO_GPIO             GPIOB
+#define SONAR_TRIGGER_IO            PB5
+#define SONAR_ECHO_IO               PB1
+
+//#define GPS
+#define BLACKBOX
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+#define TELEMETRY
+//#define TELEMETRY_IBUS
+#define SERIAL_RX
+#define USE_SERVOS
+#define USE_CLI
+#define USE_EXTI
+#define TARGET_MOTOR_COUNT 6
+
+
+
+// IO - from schematics
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(14))

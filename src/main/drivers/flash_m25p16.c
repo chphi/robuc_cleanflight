@@ -23,6 +23,10 @@
 
 #ifdef USE_FLASH_M25P16
 
+#ifdef CUSTOM_FLASHCHIP
+#include "config/parameter_group.h"
+#endif
+
 #include "drivers/flash_m25p16.h"
 #include "drivers/bus_spi.h"
 #include "drivers/system.h"
@@ -46,6 +50,7 @@
 #define JEDEC_ID_WINBOND_W25Q64        0xEF4017
 #define JEDEC_ID_MICRON_N25Q128        0x20ba18
 #define JEDEC_ID_WINBOND_W25Q128       0xEF4018
+#define JEDEC_ID_MACRONIX_MX25L64      0xC22017
 
 #define DISABLE_M25P16       GPIO_SetBits(M25P16_CS_GPIO,   M25P16_CS_PIN)
 #define ENABLE_M25P16        GPIO_ResetBits(M25P16_CS_GPIO, M25P16_CS_PIN)
@@ -159,6 +164,7 @@ static bool m25p16_readIdentification()
             geometry.sectors = 32;
             geometry.pagesPerSector = 256;
         break;
+        case JEDEC_ID_MACRONIX_MX25L64:
         case JEDEC_ID_MICRON_N25Q064:
         case JEDEC_ID_WINBOND_W25Q64:
             geometry.sectors = 128;
@@ -170,6 +176,13 @@ static bool m25p16_readIdentification()
             geometry.pagesPerSector = 256;
         break;
         default:
+#ifdef CUSTOM_FLASHCHIP
+            if (chipID == flashchipConfig()->flashchip_id) {
+                geometry.sectors = flashchipConfig()->flashchip_nsect;
+                geometry.pagesPerSector = flashchipConfig()->flashchip_pps;
+                break;
+            }
+#endif
             // Unsupported chip or not an SPI NOR flash
             geometry.sectors = 0;
             geometry.pagesPerSector = 0;
@@ -178,6 +191,14 @@ static bool m25p16_readIdentification()
             geometry.totalSize = 0;
             return false;
     }
+#ifdef CUSTOM_FLASHCHIP
+    // Write back hard coded params. Eventually go away?
+    if (flashchipConfig()->flashchip_id == 0) {
+        flashchipConfig()->flashchip_id = chipID;
+        flashchipConfig()->flashchip_nsect = geometry.sectors;
+        flashchipConfig()->flashchip_pps = geometry.pagesPerSector;
+    }
+#endif
 
     geometry.sectorSize = geometry.pagesPerSector * geometry.pageSize;
     geometry.totalSize = geometry.sectorSize * geometry.sectors;
@@ -196,7 +217,7 @@ static bool m25p16_readIdentification()
 bool m25p16_init()
 {
     //Maximum speed for standard READ command is 20mHz, other commands tolerate 25mHz
-    spiSetDivisor(M25P16_SPI_INSTANCE, SPI_18MHZ_CLOCK_DIVIDER);
+    spiSetDivisor(M25P16_SPI_INSTANCE, SPI_CLOCK_FAST);
 
     return m25p16_readIdentification();
 }

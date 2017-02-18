@@ -24,36 +24,59 @@
 #define BARO
 
 extern "C" {
-    #include "debug.h"
+    #include <platform.h>
+    #include "build/build_config.h"
+    #include "build/debug.h"
 
     #include "common/axis.h"
     #include "common/maths.h"
 
+    #include "config/parameter_group.h"
+    #include "config/parameter_group_ids.h"
+    #include "config/profile.h"
+
     #include "sensors/sensors.h"
+
     #include "drivers/sensor.h"
     #include "drivers/accgyro.h"
     #include "drivers/compass.h"
+
     #include "sensors/gyro.h"
     #include "sensors/compass.h"
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
 
-    #include "config/runtime_config.h"
+    #include "fc/runtime_config.h"
+
+    #include "io/motors.h"
+    #include "fc/rc_controls.h"
 
     #include "rx/rx.h"
+
+    #include "fc/rc_controls.h"
 
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/imu.h"
+
+    PG_REGISTER_PROFILE(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
+    PG_REGISTER_PROFILE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
+    PG_REGISTER_PROFILE(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
+    PG_REGISTER_PROFILE(compassConfig_t, compassConfig, PG_COMPASS_CONFIGURATION, 0);
+    PG_REGISTER(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 0);
+
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
 extern float q0, q1, q2, q3;
-extern "C" { 
+extern "C" {
 void imuComputeRotationMatrix(void);
 void imuUpdateEulerAngles(void);
+
+int16_t cycleTime = 2000;
+
 }
 
 void imuComputeQuaternionFromRPY(int16_t initialRoll, int16_t initialPitch, int16_t initialYaw)
@@ -131,7 +154,7 @@ uint32_t rcModeActivationMask;
 int16_t rcCommand[4];
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
-uint16_t acc_1G;
+acc_t acc;
 int16_t heading;
 gyro_t gyro;
 int32_t magADC[XYZ_AXIS_COUNT];
@@ -145,14 +168,16 @@ uint8_t armingFlags;
 int32_t sonarAlt;
 int16_t sonarCfAltCm;
 int16_t sonarMaxAltWithTiltCm;
-int32_t accADC[XYZ_AXIS_COUNT];
+int32_t accSmooth[XYZ_AXIS_COUNT];
 int32_t gyroADC[XYZ_AXIS_COUNT];
 
 int16_t GPS_speed;
 int16_t GPS_ground_course;
 int16_t GPS_numSat;
-int16_t cycleTime = 2000;
 
+float magneticDeclination = 0.0f;
+
+bool rcModeIsActive(boxId_e modeId) { return rcModeActivationMask & (1 << modeId); }
 
 uint16_t enableFlightMode(flightModeFlags_e mask)
 {

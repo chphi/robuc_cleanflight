@@ -37,7 +37,7 @@
 
 #include <stdbool.h>
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "drivers/system.h"
 #include "drivers/usb_io.h"
@@ -262,7 +262,7 @@ static void IntToUnicode(uint32_t value, uint8_t *pbuf, uint8_t len)
  * Output         : None.
  * Return         : None.
  *******************************************************************************/
-uint32_t CDC_Send_DATA(uint8_t *ptrBuffer, uint8_t sendLength)
+uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint8_t sendLength)
 {
     /* Last transmission hasn't finished, abort */
     if (packetSent) {
@@ -340,6 +340,19 @@ uint8_t usbIsConfigured(void)
 uint8_t usbIsConnected(void)
 {
     return (bDeviceState != UNCONNECTED);
+}
+
+
+/*******************************************************************************
+ * Function Name  : CDC_BaudRate.
+ * Description    : Get the current baud rate
+ * Input          : None.
+ * Output         : None.
+ * Return         : Baud rate in bps
+ *******************************************************************************/
+uint32_t CDC_BaudRate(void)
+{
+    return Virtual_Com_Port_GetBaudRate();
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -20,21 +20,22 @@
 #include <math.h>
 
 #include <platform.h>
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
 
+#include "config/parameter_group.h"
+#include "config/feature.h"
+
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/gpio.h"
-#include "config/runtime_config.h"
-#include "config/config.h"
 
-#include "io/rc_controls.h"
+#include "fc/runtime_config.h"
+#include "fc/config.h"
 
-#include "sensors/sensors.h"
-#include "sensors/battery.h"
 #include "sensors/sonar.h"
+#include "sensors/sensors.h"
 
 // Sonar measurements are in cm, a value of SONAR_OUT_OF_RANGE indicates sonar is not in range.
 // Inclination is adjusted by imu
@@ -50,85 +51,44 @@ float sonarMaxTiltCos;
 
 static int32_t calculatedAltitude;
 
-const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig)
+const sonarHardware_t *sonarGetHardwareConfiguration(bool usingCurrentMeterIOPins)
 {
-#if defined(NAZE) || defined(EUSTM32F103RC) || defined(PORT103R) || defined(PORT103V)
-    static const sonarHardware_t const sonarPWM56 = {
-        .trigger_pin = Pin_8,   // PWM5 (PB8) - 5v tolerant
-        .trigger_gpio = GPIOB,
-        .echo_pin = Pin_9,      // PWM6 (PB9) - 5v tolerant
-        .echo_gpio = GPIOB,
-        .exti_line = EXTI_Line9,
-        .exti_pin_source = GPIO_PinSource9,
-        .exti_irqn = EXTI9_5_IRQn
+#if defined(SONAR_PWM_TRIGGER_PIN)
+    static const sonarHardware_t const sonarPWM = {
+        .trigger_pin = SONAR_PWM_TRIGGER_PIN,
+        .trigger_gpio = SONAR_PWM_TRIGGER_GPIO,
+        .echo_pin = SONAR_PWM_ECHO_PIN,
+        .echo_gpio = SONAR_PWM_ECHO_GPIO,
+        .triggerIO = IO_TAG(SONAR_PWM_TRIGGER_IO),
+        .echoIO = IO_TAG(SONAR_PWM_ECHO_IO),
     };
-    static const sonarHardware_t sonarRC78 = {
-        .trigger_pin = Pin_0,   // RX7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
-        .trigger_gpio = GPIOB,
-        .echo_pin = Pin_1,      // RX8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
-        .echo_gpio = GPIOB,
-        .exti_line = EXTI_Line1,
-        .exti_pin_source = GPIO_PinSource1,
-        .exti_irqn = EXTI1_IRQn
+#endif
+#if !defined(UNIT_TEST)
+    static const sonarHardware_t sonarRC = {
+        .trigger_pin = SONAR_TRIGGER_PIN,
+        .trigger_gpio = SONAR_TRIGGER_GPIO,
+        .echo_pin = SONAR_ECHO_PIN,
+        .echo_gpio = SONAR_ECHO_GPIO,
+        .triggerIO = IO_TAG(SONAR_TRIGGER_IO),
+        .echoIO = IO_TAG(SONAR_ECHO_IO),
     };
-    // If we are using softserial, parallel PWM or ADC current sensor, then use motor pins 5 and 6 for sonar, otherwise use rc pins 7 and 8
+#endif
+
+// FIXME compare the actual IO pins rather than assuming the features clash.
+#if defined(SONAR_PWM_TRIGGER_PIN)
+    // If we are using softserial, parallel PWM or ADC current sensor, then use motor pins 5 and 6 for sonar, otherwise use RC pins 7 and 8
     if (feature(FEATURE_SOFTSERIAL)
             || feature(FEATURE_RX_PARALLEL_PWM )
-            || (feature(FEATURE_CURRENT_METER) && batteryConfig->currentMeterType == CURRENT_SENSOR_ADC)) {
-        return &sonarPWM56;
+            || usingCurrentMeterIOPins) {
+        return &sonarPWM;
     } else {
-        return &sonarRC78;
+        return &sonarRC;
     }
-#elif defined(OLIMEXINO)
-    UNUSED(batteryConfig);
-    static const sonarHardware_t const sonarHardware = {
-        .trigger_pin = Pin_0,   // RX7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
-        .trigger_gpio = GPIOB,
-        .echo_pin = Pin_1,      // RX8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
-        .echo_gpio = GPIOB,
-        .exti_line = EXTI_Line1,
-        .exti_pin_source = GPIO_PinSource1,
-        .exti_irqn = EXTI1_IRQn
-    };
-    return &sonarHardware;
-#elif defined(CC3D)
-    UNUSED(batteryConfig);
-    static const sonarHardware_t const sonarHardware = {
-        .trigger_pin = Pin_5,   // (PB5)
-        .trigger_gpio = GPIOB,
-        .echo_pin = Pin_0,      // (PB0) - only 3.3v ( add a 1K Ohms resistor )
-        .echo_gpio = GPIOB,
-        .exti_line = EXTI_Line0,
-        .exti_pin_source = GPIO_PinSource0,
-        .exti_irqn = EXTI0_IRQn
-    };
-    return &sonarHardware;
-#elif defined(SPRACINGF3) || defined(SPRACINGF3MINI)
-    UNUSED(batteryConfig);
-    static const sonarHardware_t const sonarHardware = {
-        .trigger_pin = Pin_0,   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
-        .trigger_gpio = GPIOB,
-        .echo_pin = Pin_1,      // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
-        .echo_gpio = GPIOB,
-        .exti_line = EXTI_Line1,
-        .exti_pin_source = EXTI_PinSource1,
-        .exti_irqn = EXTI1_IRQn
-    };
-    return &sonarHardware;
-#elif defined(SPARKY)
-    UNUSED(batteryConfig);
-    static const sonarHardware_t const sonarHardware = {
-        .trigger_pin = Pin_2,   // PWM6 (PA2) - only 3.3v ( add a 1K Ohms resistor )
-        .trigger_gpio = GPIOA,
-        .echo_pin = Pin_1,      // PWM7 (PB1) - only 3.3v ( add a 1K Ohms resistor )
-        .echo_gpio = GPIOB,
-        .exti_line = EXTI_Line1,
-        .exti_pin_source = EXTI_PinSource1,
-        .exti_irqn = EXTI1_IRQn
-    };
-    return &sonarHardware;
+#elif defined(SONAR_TRIGGER_PIN)
+    UNUSED(usingCurrentMeterIOPins);
+    return &sonarRC;
 #elif defined(UNIT_TEST)
-    UNUSED(batteryConfig);
+    UNUSED(usingCurrentMeterIOPins);
     return 0;
 #else
 #error Sonar not defined for target
